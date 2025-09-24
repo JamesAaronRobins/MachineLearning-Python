@@ -1,35 +1,44 @@
 
-import requests 
-from bs4 import BeautifulSoup
-from bs4 import XMLParsedAsHTMLWarning
 import warnings
+
+import requests
+from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 
 warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
-newssources = ['https://feeds.bbci.co.uk/news/rss.xml', 'https://feeds.skynews.com/feeds/rss/home.xml',
-               'https://www.theguardian.com/uk/rss','https://www.gbnews.com/feeds/feed.rss']
+NEWS_SOURCES = ['https://feeds.bbci.co.uk/news/rss.xml', 
+               'https://feeds.skynews.com/feeds/rss/home.xml', 
+               'https://www.theguardian.com/uk/rss', 
+               'https://www.gbnews.com/feeds/feed.rss']
 
-SourceList = ['BBC', 'SkyNews', 'TheGuardian', 'GBNews']
+SOURCE_LIST  = ['BBC', 'SkyNews', 'TheGuardian', 'GBNews']
+
 
 def get_soup(url):
-	newspage = requests.get(url)
+	newspage = requests.get(url, timeout=10)
 	soup = BeautifulSoup(newspage.text, "html.parser")	
 	return soup
 
-def get_headlines(newswebpage, totalheadlines,newssite):
-    soup = get_soup(newswebpage)
+
+def get_headlines(news_webpage, total_headlines, news_site):
+    soup = get_soup(news_webpage)
     
     headlines = soup.find_all('item')
     
-    for newsstories in range(totalheadlines):
+    for idx, item in enumerate(headlines[:total_headlines], start=1):
         try:
-            articleheadline = headlines[newsstories].title.text
-            print(newsstories, articleheadline)
-        except:
-            print(f'Only {newsstories} headlines from {newssite}')
+            title = item.title.text
+            print(idx, title)
+        except AttributeError:
+            # Missing <title> or unexpected structure
+            print(f"Only {idx - 1} headlines from {news_site}")
             break
-        
-for i,j in zip(newssources,SourceList):
-    print(f'Starting news headlines from {j}')
-    a = get_headlines(i, 15,j)
-    print(f'Finished news from {j}\n ---------------------')
+
+def main():
+    for url, source in zip(NEWS_SOURCES, SOURCE_LIST):
+        print(f"Starting news headlines from {source}")
+        get_headlines(url, 15, source)
+        print(f"Finished news from {source}\n---------------------")
+
+if __name__ == "__main__":
+    main()
